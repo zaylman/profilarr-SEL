@@ -298,6 +298,17 @@ PRAGMA foreign_keys = OFF;
             f.write("\n")
         f.write("\nPRAGMA foreign_keys = ON;\n")
 
+    # Layer 3: Append any local overlay files (ops/1.*.sql, ops/2.*.sql, …)
+    # These survive upstream syncs because the build script re-appends them.
+    overlay_files = sorted(glob.glob("ops/[1-9]*.sql"))
+    if overlay_files:
+        with open(OUT_SQL, 'a') as f:
+            for overlay in overlay_files:
+                print(f"  Appending local overlay: {overlay}")
+                with open(overlay) as fh:
+                    f.write(f"\n-- ===== Layer 3: {os.path.basename(overlay)} =====\n\n")
+                    f.write(fh.read())
+
     size = os.path.getsize(OUT_SQL)
     sha = hashlib.sha256(open(OUT_SQL, 'rb').read()).hexdigest()[:12]
     print(f"  {size:,} bytes, sha256:{sha}")
